@@ -1,0 +1,79 @@
+{
+  "name": "My workflow 14",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/whisk:generateImage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "=Bearer <REDACTED>"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"clientContext\": {\n    \"workflowId\": \"25c6640e-b92d-426c-bd39-2476e40f58f4\",\n    \"tool\": \"BACKBONE\",\n    \"sessionId\": \";1775646944233\"\n  },\n  \"prompt\": \"bitcoin visual style blends editorial print heritage with retro-futuristic digital illustration, screen-printed and risograph-inspired rendering with solid color blocks, fine grain and subtle digital noise applied consistently across the image, dual-tone color treatment with strong contrast, cool and deep orange dominating shadow regions, warm pinks, muted oranges, and parchment-tinted highlights, colors feel deliberate and symbolic rather than decorative, highly directional single light source, long hard-edged shadows cast across surfaces, lighting evokes early morning pressroom or archival illumination, dramatic but controlled, emphasizing form and weight, objects defined by crisp vector-like outlines, shading achieved through smooth gradients within limited color zones, no photorealism, no soft blur, no glow effects, overall mood bold, investigative, and institutional, retro-futuristic atmosphere grounded in editorial seriousness, image feels printable, archival, and modern simultaneously\",\n  \"imageModelSettings\": {\n    \"imageModel\": \"IMAGEN_3_5\",\n    \"aspectRatio\": \"IMAGE_ASPECT_RATIO_LANDSCAPE\"\n  },\n  \"mediaCategory\": \"MEDIA_CATEGORY_BOARD\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -16,
+        -16
+      ],
+      "id": "7e720c5d-c853-40ce-88ac-89cb4bacfa75",
+      "name": "Call WHISK",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "imagePanels[0].generatedImages[0].encodedImage",
+        "binaryPropertyName": "thumb image whisk",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        0
+      ],
+      "id": "0dd2bf86-a05d-4e7a-82b8-e2ef13664f6f",
+      "name": "Convert to File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Call WHISK": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9d6420b7-b476-454a-8465-66d140644b6e",
+  "meta": {
+    "instanceId": "dbaf611b164f0946b2e015dc66b54c27b00d81b530bd2d0740954fb390ccfcf8"
+  },
+  "id": "JnrqIJkNNRk2YSr5",
+  "tags": []
+}
