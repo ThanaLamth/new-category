@@ -1,0 +1,11 @@
+site,out_path,new_rows,old_rows,old_header
+BitcoinInfoNews,/Users/thana/lark_site_workbooks/BitcoinInfoNews.xlsx,6,16,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+Coincu,/Users/thana/lark_site_workbooks/Coincu.xlsx,9,120,Name | Slug | Amount_of_Articles | Old_URL | Suggested_Fix
+Coinlive,/Users/thana/lark_site_workbooks/Coinlive.xlsx,6,66,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+Coinwy,/Users/thana/lark_site_workbooks/Coinwy.xlsx,7,23,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+CryptoDailyAlert,/Users/thana/lark_site_workbooks/CryptoDailyAlert.xlsx,6,1,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+DeFiLiban,/Users/thana/lark_site_workbooks/DeFiLiban.xlsx,7,20,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+MarketBit,/Users/thana/lark_site_workbooks/MarketBit.xlsx,7,22,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+NFTENEX,/Users/thana/lark_site_workbooks/NFTENEX.xlsx,7,27,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
+AiCryptoCore,/Users/thana/lark_site_workbooks/AiCryptoCore.xlsx,6,13,Name | Old_URL | Old_Slug | New_Primary | New_Type | Suggested_Fix
+Kanalcoin,/Users/thana/lark_site_workbooks/Kanalcoin.xlsx,7,23,Name | Old_URL | New_Primary | New_Type | Suggested_Fix
