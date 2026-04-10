@@ -1,8 +1,13 @@
-import { execFileSync } from "node:child_process";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/1henfW4prbK61maDEwLGA9mkgJkbJxllH0UM5Z9-J6hM/export?format=csv&gid=205384556";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const OUTPUT_DIR = path.resolve(__dirname);
+const RESULTS_PATH = path.join(OUTPUT_DIR, "bulk-hulk-sheet-post-results.json");
 
 const siteConfigs = {
   Coincu: {
@@ -65,6 +70,70 @@ const targetRows = new Set(
     .map((value) => Number(value.trim())) ?? [])
 );
 const dryRun = process.argv.includes("--dry-run");
+
+function parseCsv(csvText) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < csvText.length; i += 1) {
+    const char = csvText[i];
+    const next = csvText[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        field += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") {
+        i += 1;
+      }
+      row.push(field);
+      field = "";
+      if (row.some((cell) => cell.length > 0)) {
+        rows.push(row);
+      }
+      row = [];
+      continue;
+    }
+
+    field += char;
+  }
+
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    if (row.some((cell) => cell.length > 0)) {
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+function rowsToObjects(csvRows) {
+  if (csvRows.length === 0) return [];
+  const headers = csvRows[0];
+  return csvRows.slice(1).map((cells) => {
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = cells[index] ?? "";
+    });
+    return obj;
+  });
+}
 
 function docIdFromUrl(url) {
   const match = url.match(/\/document\/d\/([^/]+)/);
@@ -345,42 +414,27 @@ async function fetchDocPayload(docUrl) {
 }
 
 async function loadSheetRows() {
-  const rowSelector =
-    targetRows.size > 0
-      ? [...targetRows].sort((a, b) => a - b).join(",")
-      : "";
-  const psScript = `
-$WarningPreference = 'SilentlyContinue'
-$url = '${SHEET_CSV_URL}'
-$csv = (Invoke-WebRequest -UseBasicParsing $url -TimeoutSec 60).Content | ConvertFrom-Csv
-$targets = '${rowSelector}'
-if ($targets) {
-  $numbers = $targets.Split(',') | ForEach-Object { [int]$_ }
-} else {
-  $numbers = 2..($csv.Count + 1)
-}
-$rows = foreach ($n in $numbers) {
-  $r = $csv[$n - 2]
-  if ($null -eq $r) { continue }
-  [pscustomobject]@{
-    row = $n
-    docUrl = $r.'Article Link'
-    scheduleUtcPlus4 = $r.'Time to post'
-    existingLink = $r.'Link'
-    site = $r.'SITE'
-    disclaimer = $r.'Disclaimer'
+  const res = await fetch(SHEET_CSV_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch sheet CSV: ${res.status} ${res.statusText}`);
   }
-}
-$rows | ConvertTo-Json -Depth 3 -Compress
-`;
-  const output = execFileSync(
-    "powershell",
-    ["-NoProfile", "-Command", psScript],
-    { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
-  );
-  const parsed = JSON.parse(output);
-  const rows = Array.isArray(parsed) ? parsed : [parsed];
-  return rows.filter((row) => row.docUrl && row.scheduleUtcPlus4 && row.site);
+  const csvText = await res.text();
+  const csvRows = parseCsv(csvText);
+  const objects = rowsToObjects(csvRows);
+  const allRows = objects.map((record, index) => ({
+    row: index + 2,
+    docUrl: record["Article Link"] ?? "",
+    scheduleUtcPlus4: record["Time to post"] ?? "",
+    existingLink: record["Link"] ?? "",
+    site: record["SITE"] ?? "",
+    disclaimer: record["Disclaimer"] ?? "",
+  }));
+
+  return allRows.filter((row) => {
+    if (!row.docUrl || !row.scheduleUtcPlus4 || !row.site) return false;
+    if (targetRows.size > 0 && !targetRows.has(row.row)) return false;
+    return true;
+  });
 }
 
 async function savePost(row, payload) {
@@ -513,6 +567,7 @@ async function updateYoastMeta(site, auth, postId, payload) {
 }
 
 async function main() {
+  await mkdir(OUTPUT_DIR, { recursive: true });
   const rows = await loadSheetRows();
   const results = [];
 
@@ -550,9 +605,8 @@ async function main() {
     }
   }
 
-  const outPath = "C:\\Users\\admin\\bulk-hulk-sheet-post-results.json";
-  await writeFile(outPath, JSON.stringify(results, null, 2), "utf8");
-  console.log(JSON.stringify({ dryRun, outPath, results }, null, 2));
+  await writeFile(RESULTS_PATH, JSON.stringify(results, null, 2), "utf8");
+  console.log(JSON.stringify({ dryRun, outPath: RESULTS_PATH, results }, null, 2));
 }
 
 main().catch((error) => {
